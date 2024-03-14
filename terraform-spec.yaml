@@ -1,0 +1,23 @@
+version: 0.2
+
+env:
+  variables:
+    TF_IN_AUTOMATION: 1
+    TERRAFORM_VERSION: 1.4.4
+    BASE_PATH: .
+    TF_LOG: "ERROR"
+
+phases:
+  pre_build:
+    commands:
+      - echo "Starting pre-build..."
+      - ./${BASE_PATH}/prebuild.sh
+      - echo "Prebuild stage success"
+  build:
+    commands:
+      - echo "Starting terraform ${TF_COMMAND} stage..."
+      - ./${BASE_PATH}/terraform-exec.sh
+      - echo "${TF_COMMAND} stage success"
+  post_build:
+    commands:
+      - echo Terraform environment setup Performed completed on `date`

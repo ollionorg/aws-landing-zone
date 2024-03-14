@@ -1,0 +1,427 @@
+data "aws_s3_bucket" "master_acc_bkt" {
+  provider = aws.bucket_master
+  bucket   = var.source_bucket
+}
+
+data "aws_s3_bucket" "destination_bkt" {
+  provider = aws.bucket_operational
+  bucket   = var.destination_bucket
+}
+
+### IAM POLICY SOURCE ACCOUNT ########
+
+data "aws_iam_policy_document" "source_datasync_policy" {
+  statement {
+    actions = [
+      "s3:GetBucketLocation",
+      "s3:ListBucket",
+      "s3:ListBucketMultipartUploads"
+    ]
+    resources = [data.aws_s3_bucket.master_acc_bkt.arn]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions = [
+      "s3:AbortMultipartUpload",
+      "s3:DeleteObject",
+      "s3:GetObject",
+      "s3:ListBucket",
+      "s3:ListMultipartUploadParts",
+      "s3:PutObjectTagging",
+      "s3:GetObjectTagging",
+      "s3:PutObject"
+    ]
+    resources = ["${data.aws_s3_bucket.master_acc_bkt.arn}/*"]
+    effect    = "Allow"
+  }
+
+  dynamic "statement" {
+    for_each = length(var.source_s3_bucket_kms_key) > 0 ? [1] : []
+
+    content {
+      actions = [
+        "kms:DescribeKey",
+        "kms:GenerateDataKey",
+        "kms:Decrypt",
+      ]
+      resources = [var.source_s3_bucket_kms_key]
+      effect    = "Allow"
+    }
+  }
+}
+
+
+resource "aws_iam_policy" "datasync_policy" {
+  #  count       = var.enabled ? 1 : 0
+  name        = "Datasync_cross_account_s3_source_${var.iam_role_policy_env}_Policy"
+  description = "master_to_operational_lambda_policy_for_${var.iam_role_policy_env}"
+
+  policy = data.aws_iam_policy_document.source_datasync_policy.json
+}
+
+
+
+### IAM ROLE SOURCE ACCOUNT ########
+resource "aws_iam_role" "datasync_asssume_role" {
+  #    count       = var.enabled ? 1 : 0
+  name               = "Datasync_cross_account_s3_source_${var.iam_role_policy_env}_Role"
+  depends_on         = [aws_iam_policy.datasync_policy]
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "datasync.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+### IAM ROLE POLICY ATTACHMENT SOURCE ACCOUNT ########
+resource "aws_iam_role_policy_attachment" "terraform_datasync_iam_policy_basic_execution" {
+  #  count       = var.enabled ? 1 : 0
+  depends_on = [aws_iam_role.datasync_asssume_role]
+  role       = aws_iam_role.datasync_asssume_role.id
+  policy_arn = aws_iam_policy.datasync_policy.arn
+}
+
+
+###########################################
+### IAM POLICY DESTINATION ACCOUNT ########
+
+data "aws_iam_policy_document" "dest_datasync_policy" {
+  statement {
+    actions = [
+      "s3:GetBucketLocation",
+      "s3:ListBucket",
+      "s3:ListBucketMultipartUploads"
+    ]
+    resources = [data.aws_s3_bucket.destination_bkt.arn]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions = [
+      "s3:AbortMultipartUpload",
+      "s3:DeleteObject",
+      "s3:GetObject",
+      "s3:ListBucket",
+      "s3:ListMultipartUploadParts",
+      "s3:PutObjectTagging",
+      "s3:GetObjectTagging",
+      "s3:PutObject"
+    ]
+    resources = ["${data.aws_s3_bucket.destination_bkt.arn}/*"]
+    effect    = "Allow"
+  }
+
+  dynamic "statement" {
+    for_each = length(var.dest_s3_bucket_kms_key) > 0 ? [1] : []
+
+    content {
+      actions = [
+        "kms:DescribeKey",
+        "kms:GenerateDataKey",
+        "kms:Decrypt",
+      ]
+      resources = [var.dest_s3_bucket_kms_key]
+      effect    = "Allow"
+    }
+  }
+}
+
+resource "aws_iam_policy" "datasync_destbucket_policy" {
+  #  count       = var.enabled ? 1 : 0
+  name        = "Datasync_cross_account_s3_dest_${var.iam_role_policy_env}_Policy"
+  description = "Datasync_cross_account_s3_dest_policy_for_${var.iam_role_policy_env}"
+  policy      = data.aws_iam_policy_document.dest_datasync_policy.json
+}
+
+data "aws_region" "current" {
+  #  count       = var.enabled ? 1 : 0
+}
+
+### IAM ROLE DESTINATION ACCOUNT ########
+resource "aws_iam_role" "datasync_dest_asssume_role" {
+  #    count       = var.enabled ? 1 : 0
+  name               = "Datasync_cross_account_s3_dest_${var.iam_role_policy_env}_Role"
+  depends_on         = [aws_iam_policy.datasync_policy]
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "datasync.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole",
+            "Condition": {
+                "StringEquals": {
+                    "aws:SourceAccount": "${var.operationallogs_acc_id}"
+                },
+                "ArnLike": {
+                    "aws:SourceArn": "arn:aws:datasync:${data.aws_region.current.name}:${var.operationallogs_acc_id}:*"
+                }
+            }
+        }
+    ]
+}
+EOF
+}
+
+### IAM ROLE POLICY ATTACHMENT DESTINATION ACCOUNT ########
+resource "aws_iam_role_policy_attachment" "terraform_datasync_iam_policy" {
+  #  count       = var.enabled ? 1 : 0
+  depends_on = [aws_iam_role.datasync_dest_asssume_role]
+  role       = aws_iam_role.datasync_dest_asssume_role.id
+  policy_arn = aws_iam_policy.datasync_destbucket_policy.arn
+}
+##################################################
+## Destination S3 Bucket policy assign
+
+resource "aws_s3_bucket_policy" "allow_access_from_another_account" {
+  provider = aws.bucket_operational
+  #  count       = var.enabled ? 1 : 0
+  bucket = data.aws_s3_bucket.destination_bkt.id
+  policy = data.aws_iam_policy_document.operational_logs.json
+}
+
+data "aws_iam_policy_document" "operational_logs" {
+  statement {
+    sid = "CWLogsAcl"
+    principals {
+      type        = "Service"
+      identifiers = ["logs.amazonaws.com"]
+    }
+    actions = [
+      "s3:GetBucketAcl"
+    ]
+    resources = [data.aws_s3_bucket.destination_bkt.arn]
+  }
+  statement {
+    sid = "Bucket permission for S3 Sync"
+    principals {
+      type = "AWS"
+      identifiers = [
+      "arn:aws:iam::${var.operationallogs_acc_id}:role/Datasync_cross_account_s3_dest_${var.iam_role_policy_env}_Role"]
+    }
+    actions = [
+      "s3:GetBucketLocation",
+      "s3:ListBucket",
+      "s3:ListBucketMultipartUploads",
+    ]
+    resources = [
+      "${data.aws_s3_bucket.destination_bkt.arn}"
+    ]
+  }
+  statement {
+    sid = "Bucket permission for S3 Sync 1"
+    principals {
+      type = "AWS"
+      identifiers = [
+      "arn:aws:iam::${var.operationallogs_acc_id}:role/Datasync_cross_account_s3_dest_${var.iam_role_policy_env}_Role"]
+    }
+    actions = [
+      "s3:AbortMultipartUpload",
+      "s3:DeleteObject",
+      "s3:GetObject",
+      "s3:ListMultipartUploadParts",
+      "s3:PutObjectTagging",
+      "s3:GetObjectTagging",
+      "s3:PutObject"
+    ]
+    resources = [
+      "${data.aws_s3_bucket.destination_bkt.arn}/*"
+    ]
+  }
+  statement {
+    sid    = "Deny non-HTTPS access"
+    effect = "Deny"
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+    actions = [
+      "s3:*"
+    ]
+    resources = [
+      "${data.aws_s3_bucket.destination_bkt.arn}",
+      "${data.aws_s3_bucket.destination_bkt.arn}/*"
+    ]
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+
+      values = [
+        "false"
+      ]
+    }
+  }
+}
+
+##################################################
+## Source S3 Bucket policy assign
+
+resource "aws_s3_bucket_policy" "allow_access_from_source_account" {
+
+  #  count       = var.enabled ? 1 : 0
+  depends_on = [aws_s3_bucket_policy.allow_access_from_another_account]
+  provider   = aws.bucket_master
+  bucket     = data.aws_s3_bucket.master_acc_bkt.id
+  policy     = data.aws_iam_policy_document.master_account_s3.json
+}
+
+data "aws_iam_policy_document" "master_account_s3" {
+  statement {
+    sid = "CWLogsAcl"
+    principals {
+      type        = "Service"
+      identifiers = ["logs.amazonaws.com"]
+    }
+    actions = [
+      "s3:GetBucketAcl"
+    ]
+    resources = [data.aws_s3_bucket.master_acc_bkt.arn]
+  }
+  statement {
+    sid = "CWLogs"
+    principals {
+      type        = "Service"
+      identifiers = ["logs.amazonaws.com"]
+    }
+    actions = [
+      "s3:PutObject"
+    ]
+    resources = ["${data.aws_s3_bucket.master_acc_bkt.arn}/*"]
+  }
+  statement {
+    sid = "OrgAccountsAcl"
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${var.account_id_bu1_app}:root"]
+    }
+
+    actions = [
+      "s3:PutBucketAcl",
+      "s3:GetBucketAcl"
+    ]
+    resources = [data.aws_s3_bucket.master_acc_bkt.arn]
+    condition {
+      test     = "ForAnyValue:StringEquals"
+      variable = "aws:PrincipalOrgID"
+      values   = ["${var.organization_id}"]
+    }
+  }
+  statement {
+    sid = "OrgAccounts"
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${var.account_id_bu1_app}:root"]
+    }
+    actions = [
+      "s3:PutObject"
+    ]
+    resources = ["${data.aws_s3_bucket.master_acc_bkt.arn}/*"]
+    condition {
+      test     = "ForAnyValue:StringEquals"
+      variable = "aws:PrincipalOrgID"
+      values   = ["${var.organization_id}"]
+    }
+  }
+  statement {
+    sid = "Bucket permission for S3 Sync"
+    principals {
+      type = "AWS"
+      identifiers = [
+        "arn:aws:iam::${var.operationallogs_acc_id}:root",
+      "arn:aws:iam::${var.operationallogs_acc_id}:role/Datasync_cross_account_s3_source_${var.iam_role_policy_env}_Role"]
+    }
+    actions = [
+      "s3:GetBucketLocation",
+      "s3:ListBucket",
+      "s3:ListBucketMultipartUploads",
+      "s3:AbortMultipartUpload",
+      "s3:DeleteObject",
+      "s3:GetObject",
+      "s3:ListMultipartUploadParts",
+      "s3:PutObject",
+      "s3:GetObjectTagging",
+      "s3:PutObjectTagging"
+    ]
+    resources = [
+      "${data.aws_s3_bucket.master_acc_bkt.arn}",
+      "${data.aws_s3_bucket.master_acc_bkt.arn}/*"
+    ]
+    condition {
+      test     = "ForAnyValue:StringEquals"
+      variable = "aws:PrincipalOrgID"
+      values   = ["${var.organization_id}"]
+    }
+  }
+  statement {
+    sid    = "Deny non-HTTPS access"
+    effect = "Deny"
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+    actions = [
+      "s3:*"
+    ]
+    resources = [
+      "${data.aws_s3_bucket.master_acc_bkt.arn}",
+      "${data.aws_s3_bucket.master_acc_bkt.arn}/*"
+    ]
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+
+      values = [
+        "false"
+      ]
+    }
+  }
+}
+
+#########################
+
+
+resource "aws_datasync_location_s3" "source_location" {
+  #  count       = var.enabled ? 1 : 0
+  depends_on = [
+    aws_s3_bucket_policy.allow_access_from_source_account
+  ]
+  s3_bucket_arn = data.aws_s3_bucket.master_acc_bkt.arn
+  subdirectory  = "/"
+
+  s3_config {
+    bucket_access_role_arn = aws_iam_role.datasync_asssume_role.arn
+  }
+}
+
+resource "aws_datasync_location_s3" "destination_location" {
+  #  count       = var.enabled ? 1 : 0
+  s3_bucket_arn = data.aws_s3_bucket.destination_bkt.arn
+  subdirectory  = var.dest_bkt_subdir
+
+  s3_config {
+    bucket_access_role_arn = aws_iam_role.datasync_dest_asssume_role.arn
+  }
+}
+
+resource "aws_datasync_task" "example" {
+  #  count       = var.enabled ? 1 : 0
+  destination_location_arn = aws_datasync_location_s3.destination_location.arn
+  name                     = var.datasync_taskname
+  source_location_arn      = aws_datasync_location_s3.source_location.arn
+  schedule {
+    schedule_expression = "cron(0 */1 * * ? *)" # every 1 hours
+  }
+}

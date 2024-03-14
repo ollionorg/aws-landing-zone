@@ -1,27 +1,19 @@
-# Support and Help
+# Support
 
-Need help getting started or using a project? Here's how.
+Thanks for using our project! If you're looking for help, here are a few options:
 
-## How to get help
+## Documentation
 
-Generally, we do not use GitHub as a support forum. For any usage questions that are not specific to the project itself, please ask on [Stack Overflow](https://stackoverflow.com) instead. By doing so, you are more likely to quickly solve your problem, and you will allow anyone else with the same question to find the answer. This also allows maintainers to focus on improving the project for others.
+First, we recommend checking our [documentation](https://github.com/ollionorg/aws-landing-zone/wiki/User-Guide). We've put a lot of effort into providing comprehensive, easy-to-understand documentation to help you get started and solve common problems.
 
-Please seek support in the following ways:
+## Issue Tracker
 
-1. :book: **Read the documentation and other guides** for the project to see if you can figure it out on your own. These should be located in a root `docs/` directory. If there is an example project, explore that to learn how it works to see if you can answer your question.
+If you've found a bug or have a feature request, please use our [issue tracker](https://github.com/ollionorg/aws-landing-zone/issues). Before submitting a new issue, please search through existing issues to avoid duplication.
 
-1. :bulb: **Search for answers and ask questions on [Stack Overflow](https://stackoverflow.com).** This is the most appropriate place for debugging issues specific to your use of the project, or figuring out how to use the project in a specific way.
+## Email Support
 
-1. :memo: As a **last resort**, you may open an issue on GitHub to ask for help. However, please clearly explain what you are trying to do, and list what you have already attempted to solve the problem. Provide code samples, but **do not** attach your entire project for someone else to debug. Review our [contributing guidelines](https://github.com/cldcvr/cldcvr-repo-template/blob/main/CONTRIBUTING.md).
+If none of the above options work for you, you can email us at lzhelp@ollion.com. We'll respond to you as soon as possible.
 
-## What NOT to do
+Please understand that this project is supported by volunteers. We'll do our best to help you as quickly as we can, but there might be delays, especially around holidays and weekends.
 
-Please **do not** do any the following:
-
-1. :x: Do not reach out to the author or contributor on Twitter (or other social media) by tweeting or sending a direct message.
-
-1. :x: Do not email the author or contributor.
-
-1. :x: Do not open duplicate issues or litter an existing issue with +1's.
-
-These are not appropriate avenues for seeking help or support with an open-source project. Please follow the guidelines in the previous section. Public questions get public answers, which benefits everyone in the community. ✌️
+Thanks for your understanding!

@@ -1,0 +1,1 @@
+log_destination_type = "S3"

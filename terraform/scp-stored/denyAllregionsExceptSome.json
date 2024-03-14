@@ -1,0 +1,24 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Sid": "DenyAllOutsideRegion",
+        "Effect": "Deny",
+        "Action": [
+          "*"
+        ],
+        "Resource": [
+          "*"
+        ],
+        "Condition": {
+          "StringNotEquals": {
+            "aws:RequestedRegion": [
+              "ap-southeast-1",
+              "us-east-1",
+              "ap-south-1"
+            ]
+          }
+        }
+      }
+    ]
+  } 

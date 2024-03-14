@@ -1,252 +1,190 @@
-> Replace the contents accordingly
 
+![OLLION](img/OLLION_BANNER.png)
+
+# AWS Landing Zone
+[![Documentation](https://img.shields.io/badge/Wiki-User_Guide-red?logo=read-the-docs)](https://github.com/ollionorg/aws-landing-zone/wiki/User-Guide)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Discord](https://discordapp.com/api/guilds/1212635303412506694/widget.png?style=shield)](https://discord.gg/aY8EBx4t)
+[![Reports](https://img.shields.io/badge/Compliance_report-100%25-green.svg)](https://github.com/ollionorg/aws-landing-zone/wiki/User-Guide#how-compliant-your-landing-zone-to-well-known-best-practices)
+
+
+
+## Repo directory structure
+Follow the below directory structure:
+
+```
+repo:
+├── 0-bootstrap
+│   ├── bootstrap.sh
+│   ├── bootstrap
+│   ├── cicd
+│   │   ├── inventories
+│   │   └── modules
+│   │       └── cicd
+│   │           └── templates
+│   └── tf-prerequisites
+├── 1-org
+|   ├── aws-secure-baseline
+│   │   ├── alarm-baseline
+│   │   ├── iam-ebs-secure-baselines
+│   │   └── s3-baseline
+│   ├── billing
+│   ├── cloudtrail
+│   ├── cloudwatch-s3-exporters
+│   │   ├── Dev
+│   │   ├── Prod
+│   │   └── Staging
+│   ├── config
+│   ├── detective
+│   ├── guardduty
+│   ├── infra-cicd
+│   ├── kms
+│   ├── macie
+│   ├── logging-buckets
+│   ├── permission-sets
+│   ├── rego-s3-sync
+│   ├── securityhub
+│   ├── shared-service
+├── 2-network
+│   ├── dns-hub
+│   │   ├── dns-securtiylogging
+│   │   ├── firewall
+│   │   ├── route53resolver
+│   │   ├── transit-gateway
+│   │   └── vpc
+│   └── network-hub
+│       ├── firewall
+│       ├── high-trust
+│       ├── transit-gateway
+│       └── vpc
+├── 3-env
+│   ├── dev
+│   │   ├── transit-gateway
+│   │   └── vpc
+│   ├── prod
+│   │   ├── transit-gateway
+│   │   └── vpc
+│   └── staging
+│       ├── transit-gateway
+│       └── vpc
+├── img
+├── permissionset-compliance
+│   ├── report
+│   └── validation
+├── rego
+│   └── rules
+├── terraform
+│    ├── modules
+│    └── scp-stored    
+├── Dockerfile
+├── apply.sh
+├── destroy.sh
+├── destroy-all.sh
+├── global-lz-state-backend.conf
+├── lzconfig.yaml
+├── nuke.sh
+├── plan.sh
+├── prebuild.sh
+├── regula-prebuild.sh
+├── regula-spec.yaml
+├── regula.sh
+├── terraform-exec.sh
+└── terraform-spec.yaml
+```
 ---
 
-# cldcvr-repo-template
-Template for repo creation in CldCvr GitHub Organization
+## Software Prerequisites
+To run the commands described in this document, you need to have the following installed:
+- AWS CLI v2.8.2
+- Terraform v1.4.5
+- git v2.38.1
 
-This repo contains the essential files required to create a repo using best practices. The filenames and it's usage is in below table.
+## Prerequisites:
+1. AWS Account that will be used as a Management Account
+2. Setup of AWS SSO by any supported Identity Provider
+3. Setup of AWS Organization (this will be done automatically while setting up SSO)
+4. Deployer should be a part of the admin permission set for the Management account.
+5. Complete authentication with aws credentials i.e. AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN
+	- Go to the AWS access portal URL
+	- Select Management account
+	- Click on the Command line or programmatic access.
+	- Copy the environment variable and paste it on AWS CLI to get authenticated.
+6. Increase the limit to create AWS account API calls. This landing zone deployment requires at least 18 accounts including the management account.
+7. There are a few steps that require manual approval and the deployer should be approving them appropriately.
 
-# Usage
+> For more information about the permissions that are required, and the resources that are created, see the organization bootstrap module documentation.
 
-| File Name | Location | Usage |
-| --- | --- | --- |
-| README.md | `root` | Contains the details of contents present in the repo. For example, it can contain the version of Terraform and it's usage steps |
-| CODEOWNERS | `root` | Contains the ownership of various folders present in the repo. This is useful when raising a PR, so the CODEOWNERS are assigned as reviewers automatically. More details [here](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners) |
-| LICENSE | `root` | Contains the license information for the repo depending on the case of OSS. Check with your organizational policies. |
-| CONTRIBUTING.md | `root` | A CONTRIBUTING.md file, in your open source repository or site, provides potential project contributors with a short guide to how they can help with your project. More details [here](https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/setting-guidelines-for-repository-contributors) |
-| .gitignore | `root` | gitignore file is a text file that tells Git which files or folders to ignore in a project. |
-| SUPPORT.md | `root` | Contains the usage for raising support related to the project. Can vary from organization to organization. |
-| PULL_REQUEST_TEMPLATE.md | `.github/` | This file triggers project contributors to automatically see the template's contents in a new pull request body. The template can customize and standardize the information you'd like included when contributors create pull requests. |
-| `<workflow_name>.yml` | `.github/workflows/` | Contains workflow files for automated CI/CD integrations with GitHub Actions or 3rd party extensions |
 
----
+## Deployment Process
 
-> The below content is referred from [joelparkerhenderson/github-special-files-and-paths](https://github.com/joelparkerhenderson/github-special-files-and-paths)
-# GitHub special files and paths
+### Step 0 - Forking Github repo
 
-<img src="README.png" alt="GitHub special files and paths" style="width: 100%;"/>
+Follow the steps to fork or clone the landing zone GITHUB repo on your local machine:
+1. Create a personal access token (PAT) on GitHub. Goto GitHub profile > Settings > Developer Settings > Personal Access Tokens > Generate New Token.
+2. Set username and generated PAT in your machine.
+3. Clone the repo:
+```
+git clone https://github.com/ollionorg/aws-landing-zone.git
+```
 
-GitHub uses special files such as `README` and `LICENSE`, and special paths such as `/.github` and `/docs`, to improve repository managment and developer interactions.  This page is a summary. We welcome pull requests.
+### Step 1 - Collect configuration information
+- Ensure the configuration parameters inside the file [lzconfig.yaml](https://github.com/ollionorg/aws-landing-zone/blob/main/lzconfig.yaml) are properly set and commit the changes to the repository.
+- Update the [global-lz-state-backend.conf](https://github.com/ollionorg/aws-landing-zone/blob/main/global-lz-state-backend.conf) with the backend s3 bucket, Region, and DynamoDB Table.
 
-* [Introduction](#introduction)
-* [README](#readme)
-* [CHANGELOG](#changelog)
-* [LICENSE](#license)
-* [SUPPORT](#support)
-* [SECURITY](#security)
-* [CODE_OF_CONDUCT](#code_of_conduct)
-* [CONTRIBUTING](#contributing)
-* [CONTRIBUTORS](#contributors)
-* [AUTHORS](#authors)
-* [ACKNOWLEDGMENTS](#acknowledgments)
-* [CODEOWNERS](#codeowners)
-* [ISSUE_TEMPLATE](#issue_template)
-* [PULL_REQUEST_TEMPLATE](#pull_request_template)
-* [CITATION.cff](#citation-cff)
-* [FUNDING](#funding)
-* [dependabot.yml](#dependabotyml)
-* [workflows](#workflows)
-* [Jekyll](#jekyll)
 
+### Step 2 - Invoke the bootstrap script
+Authenticate the shell with AWS IAM credentials belonging to the administrator user of the management account and trigger the script [0-bootstrap/bootstrap.sh](https://github.com/ollionorg/aws-landing-zone/blob/main/0-bootstrap/bootstrap.sh)
 
-## Introduction
+The script will do Terraform apply in [0-bootstrap/tf-prerequisites](https://github.com/ollionorg/aws-landing-zone/tree/main/0-bootstrap/tf-prerequisites) directory first which will create an S3 bucket and DynamoDB table which will be used by Terraform to store the state and state locking mechanism respectively in the management account.
 
-GitHub special files can typically be written with a variety of formats and file name extensions:
+Afterward, the [0-bootstrap/bootstrap](https://github.com/ollionorg/aws-landing-zone/tree/main/0-bootstrap/bootstrap) directory will get triggered which will create an Organization Unit as well as an AWS Account called LZ CICD. This newly created account will hold our CICD automation stack.
 
-  * Freeform text, such as `README` or `README.txt`.
+Subsequently, [0-bootstrap/cicd](https://github.com/ollionorg/aws-landing-zone/tree/main/0-bootstrap/cicd) will get triggered which will create a CICD automation stack in the LZ CICD Account.
 
-  * Markup formats, such as `README.markdown` or `README.asciidoc` - see [markups](https://github.com/github/markup/blob/master/README.md#markups)
+  ![alt text](img/LZCICD_TF_OUTPUT.png)
 
-  * Custom syntaxes, such as the file `CODEOWNERS`.
 
-GitHub special files are typically located at the repository top level or in special paths:
+### Step 3 - (Only applicable for GitHub backend)
+In the wake of best practices, we will not be maintaining keys or passwords or anything sensitive for authentication to the GitHub repo.
 
-  * `/.github` is a hidden dot file directory.
+The user has to manually execute the below steps for the authentication part:
+1. Go into the newly created LZ CICDweb console
+2. Go into AWS CodePipeline
+3. Search for Connections in the Settings
+4. Approve the connection as shown on the screen that will transition to the Available state from the Pending one.
 
-  * `/docs` is a typical documentation directory.
+   ![My awesome image](img/CODEPIPELINE_PENDING_STATE.png)
+   *Before approval, connection status remains in Pending state*
 
-  * Custom paths, such as the directory `ISSUE_TEMPLATE`.
+ > [!NOTE]
+   > Approval needs to happen on the GitHub side
+   
 
-The special files and paths are sometimes also known as community health files, recommended repository files, well-known configurations, etc.
+   ![alt text](img/CODEPIPELINE_AVAILABLE_STATE.png)
+   *After approval, the connection status becomes Available*
 
-For a general overview see [building a strong community](https://help.github.com/categories/building-a-strong-community/) and [GitHub's Open Source Guides](https://opensource.guide/).
 
+### Step 4 - Trigger the CICD pipeline
+After Step 3 is successful, we have to go to AWS Console and manually trigger the pipeline as shown below.
+- Go into the LZ CICD web console
+- Go into AWS CodePipeline
+- Click on our aws-lz-dev CodePipeline
+- Click on Release Changes[The Deployment of the Landing Zone will Start]
 
-## README
+In order to know what is happening with our pipeline in real-time, we can view logs of the same in AWS CodePipeline UI.
 
-  * File: `README` or `README.txt` or `README.md` etc.
+The pipeline will run in the following sequence:
 
-  * Help: <https://help.github.com/articles/about-readmes/>
+1. Log terraform plan to the CodePipeline
+2. Wait for manual approval of authorized approvers only (the notification for approval can be sent to Email or AWS SNS, but the example below shows approval from AWS CodePipeline GUI without any notification to the user being sent)
+3. Approve the pipeline. There are a total of 6 Manual approvals in the entire pipeline:
+	 - ApprovalOrgHierarchy (Stage OrgPrerequisites)
+	 - ApprovalLoggingBuckets (Stage OrgPrerequisites)
+	 - ApprovalVPC (Stage OrgPrerequisites)
+	 - ApprovalDNSResolver (Stage OrgPrerequisites)
+	 - ApprovalWorkloadVPC (Stage OrgPrerequisites)
+	 - ORGMAINApproval (Stage OrgMain)
 
-  * Awesome: list: <https://github.com/matiassingers/awesome-readme>
 
-This file that explains your project, what it does, why it is useful, etc. 
-
-This file is often the first item a visitor will see when visiting your repository, because GitHub automatically shows this file to repository visitors.
-
-
-## CHANGELOG
-
-  * File: `CHANGELOG` or `CHANGELOG.txt` or `CHANGELOG.md` etc. 
-
-This file explains a reposity's notable changes, updates, versions, bug fixes, and the like. This file name convention has been around since the early days of the web.
-
-
-## LICENSE
-
-  * File: `LICENSE` or `LICENSE.txt` or `LICENSE.md` etc. 
-
-  * Help: <https://help.github.com/articles/adding-a-license-to-a-repository/>
-
-This file explains the respostory's legal license, such as any legal rights, any copyright restrictions, etc. If you include a detectable license in your repository, people who visit your repository will see it at the top of the repository page.
-
-If you want help to choose a license, then try https://choosealicense.com
-
-If your project is significant, or contains other peoples' work or intellectual property, then you may want to consult with a lawyer who can help you with your specific goals and needs. If you don't provide a license, then in some locations a default copyright law will apply.
-
-
-## SUPPORT
-
-  * File: `SUPPORT` or `SUPPORT.txt` or `SUPPORT.md` etc. 
-
-This file explains how a reader can get help with the repository and project. Github links this file on the page "New Issue". Unlike the "CONTRIBUTING" file, GitHub does not link this file on the page "New Pull Request".
-
-
-## SECURITY
-
-  * File: `SECURITY` or `SECURITY.txt` or `SECURITY.md` etc.
-
-  * Help: <https://help.github.com/en/articles/adding-a-security-policy-to-your-repository>
-
-This file explains the project's security policies, such as a list of versions that are currently being maintained with security updates. This file also provides instructions on how users can submit a report of a vulnerability. 
-
-GitHub links to this file, under the "Policy" link on the "Security" tab of your repository.
-
-
-## CODE_OF_CONDUCT
-
-  * File: `CODE_OF_CONDUCT` or `CODE_OF_CONDUCT.txt` or `CODE_OF_CONDUCT.md` etc.
-
-  * Help: <https://help.github.com/articles/adding-a-code-of-conduct-to-your-project/>
-
-  * Awesome: list: <https://i-sight.com/resources/18-of-the-best-code-of-conduct-examples/>
-
-This file explains how to engage in a community, and how to inclusive environment that respects all people, and how to address any problems among members of your project's community.
-
-
-## CONTRIBUTING
-
-  * File: `CONTRIBUTING` or `CONTRIBUTING.txt` or `CONTRIBUTING.md` etc.
-
-  * Help: <https://help.github.com/articles/setting-guidelines-for-repository-contributors/>
-
-  * Awesome: list: <https://github.com/mntnr/awesome-contributing>
-
-This file explains how people can contribute to the project. This file can help verify people are submitting well-formed pull requests and opening useful issues. 
-
-GitHub links to this file, on the page "New Issue" and the page "New Pull Request".
-
-
-## CONTRIBUTORS
-
-  * File: `CONTRIBUTORS` or `CONTRIBUTORS.txt` or `CONTRIBUTORS.md` etc. 
-
-This file explains who has contributed to the project. When we use a `CONTRIBUTORS` file in our projects, we ask people how they want to be listed, such as by their name, handle, email address, website link, etc. 
-
-Compare this file to the file `AUTHORS`.
-
-
-## AUTHORS
-
-  * File: `AUTHORS` or `AUTHORS.txt` or `AUTHORS.md` etc. 
-
-This file lists people who are significant authors of the project, such as the people who are legally related to the work. The GNU project states "Only the contributions that are legally significant for copyright purposes (see Legally Significant) need to be listed. Small contributions, bug reports, ideas, etc., can be omitted." 
-
-Compare this file to the file `CONTRIBUTORS`.
-
-
-## ACKNOWLEDGMENTS
-
-  * File: `ACKNOWLEDGMENTS` or `ACKNOWLEDGMENTS.txt` or `ACKNOWLEDGMENTS.md` etc. 
-
-This file explains relevant related work, such as other projects that are dependencies, or libraries, or modules, or have their own copyrights or licenses that you want to include in your project.
-
-
-## CODEOWNERS
-
-  * File: `CODEOWNERS`
-
-  * Help: <https://help.github.com/articles/about-codeowners/>
-
-This file defines individuals or teams that are responsible for code in a repository. 
-
-Code owners are automatically requested for review when someone opens a pull request that modifies code that they own. When someone with admin or owner permissions has enabled required reviews, they also can optionally require approval from a code owner before the author can merge a pull request in the repository.
-
-
-## ISSUE_TEMPLATE
-
-  * File: `ISSUE_TEMPLATE`
-
-  * Help: <https://help.github.com/articles/creating-an-issue-template-for-your-repository/>
-
-  * Awesome: list: <https://github.com/devspace/awesome-github-templates>
-
-When you add an issue template to your repository, project contributors will automatically see the template's contents in the issue body. Templates customize and standardize the information you'd like included when contributors open issues.
-
-See <https://blog.github.com/2018-01-25-multiple-issue-and-pull-request-templates/>
-
-To add multiple issue templates to a repository create an `ISSUE_TEMPLATE/` directory in your project root. Within that `ISSUE_TEMPLATE/` directory you can create as many issue templates as you need, for example `ISSUE_TEMPLATE/bugs.md`.
-
-
-## PULL_REQUEST_TEMPLATE
-
-  * File: `PULL_REQUEST_TEMPLATE` or can be a subdirectory
-
-  * Help: <https://help.github.com/articles/creating-a-pull-request-template-for-your-repository/>
-
-  * Awesome: list: <https://github.com/devspace/awesome-github-templates>
-
-This file triggers project contributors to automatically see the template's contents in a new pull request body. The template can customize and standardize the information you'd like included when contributors create pull requests.
-
-See <https://blog.github.com/2018-01-25-multiple-issue-and-pull-request-templates/>
-
-You can create a `PULL_REQUEST_TEMPLATE/` subdirectory in any of the supported folders to contain multiple pull request templates. Use the template query parameter to specify the template that will automatically fill the pull request body. For more information, see "[About automation for issues and pull requests with query parameters.](https://help.github.com/articles/about-automation-for-issues-and-pull-requests-with-query-parameters/)"
-
-
-## CITATION.cff
-
-  * File: `CITATION.cff`
-
-  * Help: <https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-citation-files>
-
-This file explains how you would like people to cite your work. The citation file format is plain text with human-readable and machine-readable citation information.
-
-When you add this file to the default branch root directory of your repository, then GitHub automatically links to it from the repository landing page.
-
-
-## FUNDING.yml
-
-  * File: `.github/FUNDING.yml`
-
-  * Help: <https://docs.github.com/en/github/administering-a-repository/managing-repository-settings/displaying-a-sponsor-button-in-your-repository>
-
-You can configure your sponsor button by adding a  file in your repository on the default branch. You can configure the button to include sponsored developers in GitHub Sponsors, external funding platforms, or a custom funding URL.
-
-
-## dependabot.yml
-
-  * File: `.github/dependabot.yml`
-
-  * Help: <https://github.com/dependabot>
-
-Dependabot is a GitHub tool that provides automated dependency updates. To enable updates, create a Dependabot configuration file and add it to a repository. The file describes the dependencies to update, where dependency manifests are located, etc. If Dependbot discovers that an update is available, then Dependabot sends you a pull request to update your dependency.
-
-
-## Workflows
-
-  * Directory: `.github/workflows`
-
-  * Help: <https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions>
-
-A workflow is a configurable automated process made up of one or more jobs. You must create a YAML file to define your workflow configuration. Workflow files use YAML syntax, and must have file extension `.yml` or `.yaml`.
+## Troubleshooting
+Describe the problem clearly and send an email to lzhelp@ollion.com.

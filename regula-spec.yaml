@@ -1,0 +1,21 @@
+version: 0.2
+
+env:
+  variables:
+    BASE_PATH: .
+    TF_LOG: "ERROR"
+
+phases:
+  pre_build:
+    commands:
+      - echo "Starting pre-build..."
+      - ./${BASE_PATH}/regula-prebuild.sh
+      - echo "Prebuild stage success"
+  build:
+    commands:
+      - echo "Starting Regula..."
+      - ./${BASE_PATH}/regula.sh
+      - echo "Regula run succeeded"
+  post_build:
+    commands:
+      - echo Regula run completed on `date`

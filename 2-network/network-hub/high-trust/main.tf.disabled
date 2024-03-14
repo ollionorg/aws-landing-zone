@@ -1,0 +1,38 @@
+locals {
+  account_id_high_trust = [for a in data.terraform_remote_state.remote.outputs.accounts : a.id if a.name == var.high_trust_interconnect_account_name][0]
+  account_id_no_trust = [for a in data.terraform_remote_state.remote.outputs.accounts : a.id if a.name == var.no_trust_interconnect_account_name][0]
+}
+
+# module "gateway" {
+#   source = "../../terraform/modules/direct-connect"
+  
+#   create_dx_gateway = true
+#   create_dx_private_hosted_vif = false
+
+#   dx_gateway_name    = "test"
+#   dx_gateway_bgp_asn = "65399"
+
+#   providers = {
+#     aws.accepter = aws
+#     aws          = aws.high-trust-interconnect
+#   }
+# }
+
+# module "associate" {
+#   source = "../../terraform/modules/direct-connect"
+
+#   crossaccount_dx_gateway = true
+#   dx_gateway_id = module.gateway.dx_gateway_id
+#   dx_gateway_owner_account_id = local.account_id_high_trust
+#   allowed_prefixes = ["172.31.0.0/16"]
+
+#   # vgw_id = aws_vpn_gateway.this.id
+#   vgw_id = "tgw-abs313bh3288393"
+#   transit_gateway_route_table_id = "tgw-rtb-838yd8s8d2hdh"
+#   direct_connect_static_routes_destinations = ["172.31.0.0/16"]
+
+#   providers = {
+#     aws.accepter = aws.high-trust-interconnect
+#     aws          = aws
+#   }
+# }

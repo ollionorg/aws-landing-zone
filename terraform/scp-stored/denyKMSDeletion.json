@@ -1,0 +1,19 @@
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "denyKMSDeletion",
+			"Effect": "Deny",
+			"Action": [
+				"kms:DeleteAlias",
+				"kms:DeleteCustomKeyStore",
+				"kms:DeleteImportedKeyMaterial",
+				"kms:DisconnectCustomKeyStore",
+				"kms:ScheduleKeyDeletion"
+			],
+			"Resource": [
+				"*"
+			]
+		}
+	]
+}
