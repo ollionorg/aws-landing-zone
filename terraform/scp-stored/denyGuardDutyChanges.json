@@ -1,0 +1,32 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Deny",
+            "Action": [ 
+                "guardduty:AcceptInvitation",
+                "guardduty:ArchiveFindings",
+                "guardduty:DeclineInvitations",
+                "guardduty:DeleteDetector",
+                "guardduty:DeleteFilter",
+                "guardduty:DeleteInvitations",
+                "guardduty:DeleteIPSet",
+                "guardduty:DeleteMembers",
+                "guardduty:DeletePublishingDestination",
+                "guardduty:DeleteThreatIntelSet",
+                "guardduty:DisassociateFromMasterAccount",
+                "guardduty:DisassociateMembers",
+                "guardduty:StopMonitoringMembers",
+                "guardduty:UnarchiveFindings",
+                "guardduty:UntagResource",
+                "guardduty:UpdateDetector",
+                "guardduty:UpdateFilter",
+                "guardduty:UpdateFindingsFeedback",
+                "guardduty:UpdateIPSet",
+                "guardduty:UpdatePublishingDestination",
+                "guardduty:UpdateThreatIntelSet"
+            ],      
+            "Resource": "*"
+        }
+    ]
+}

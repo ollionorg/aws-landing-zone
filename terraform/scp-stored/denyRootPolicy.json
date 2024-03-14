@@ -1,0 +1,38 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Sid": "denyCreateUser",
+        "Effect": "Deny",
+        "Action": [
+          "iam:CreateUser"
+        ],
+        "Resource": [
+          "*"
+        ]
+      },
+      {
+        "Sid": "DenyECSEC2Creation",
+        "Effect": "Deny",
+        "Action": [
+          "ecs:CreateCapacityProvider",
+          "ecs:DeregisterContainerInstance",
+          "ecs:RegisterContainerInstance",
+          "ecs:UpdateContainerAgent",
+          "ecs:UpdateContainerInstancesState",
+          "ecs:ListContainerInstances",
+          "ecs:DescribeContainerInstances"
+        ],
+        "Resource": "*"
+      },
+      {
+        "Effect": "Deny",
+        "Action": [
+          "organizations:LeaveOrganization"
+        ],
+        "Resource": [
+          "*"
+        ]
+      }
+    ]
+  }

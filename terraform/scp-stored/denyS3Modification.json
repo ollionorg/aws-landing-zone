@@ -1,0 +1,39 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Deny",
+        "Action": [
+          "s3:DeleteBucket",
+          "s3:DeleteObject",
+          "s3:DeleteObjects",
+          "s3:DeleteObjectTagging",
+          "s3:DeleteBucketTagging",
+          "s3:DeleteBucketReplication",
+          "s3:DeleteBucketPolicy",
+          "s3:DeleteBucketOwnershipControls",
+          "s3:DeleteBucketMetricsConfiguration",
+          "s3:DeleteBucketLifecycle",
+          "s3:DeleteBucketInventoryConfiguration",
+          "s3:DeleteBucketIntelligentTieringConfiguration",
+          "s3:DeleteBucketEncryption",
+          "s3:DeleteBucketCors",
+          "s3:DeleteBucketAnalyticsConfiguration",
+          "s3:DeletePublicAccessBlock",
+          "s3:PutBucketLogging",
+          "s3:PutBucketPolicy",
+          "s3:PutEncryptionConfiguration",
+          "s3:PutLifecycleConfiguration",
+          "s3:PutAccessPointPublicAccessBlock",
+			   	"s3:PutAccountPublicAccessBlock",
+			  	"s3:PutBucketPublicAccessBlock"
+        ],
+        "Resource": "*",
+        "Condition": {
+          "StringNotLike": {
+            "aws:PrincipalARN":"arn:aws:iam::*:role/OrganizationAccountAccessRole"
+          }
+        }
+      }
+    ]
+}

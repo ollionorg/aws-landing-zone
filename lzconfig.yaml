@@ -1,0 +1,249 @@
+global:
+  home_region: "ap-southeast-1"                          # Home region for AWS LZ deployment 
+  lz_state_bucket: "aws-lz-state-bucket"                 # Name for AWS LZ Terraform State bucket
+  lz_state_locking_dynamodb_table: "aws-lz-state-lock"   # Name of DyanmoDB table for terraform state Locking
+  switch_role_to_assume: "OrganizationAccountAccessRole" # Name of the Role to Assume to Deploy AWS LZ services in Accounts
+bootstrap:
+  bootstrap_ou_name: "Bootstrap"                         # Bootstrap OU name
+  bootstrap_account_name: "LZ CICD"                      # LZ CICD Account Name
+  bootstrap_account_email: ""                            # example: test_at_ollion_com
+  cicd:
+    git_repo_id: "ollionorg/aws-landing-zone"            # AWS LZ Github Repository ID
+    git_repo_name: "aws-landing-zone"                    # AWS LZ Github Repository Name
+    git_branch: "main"                                   # AWS LZ Github Repository Branch
+    s3_bucket_prefix: "aws-landing-zone"                 # S3 Bucket Prefix for AWS LZ Terraform State Bucket
+org:
+  common:
+    target_regions:
+      - "ap-southeast-1"                                 # Region where you want to deploy AWS LZ [single region only]
+    object_lock_enabled: false                           # Whether you want to enable Object Lock for all S3 Buckets in AWS LZ
+    object_lock_conf:     
+      default_retention_mode: "COMPLIANCE"               # Object Lock Retention Mode [Only applicable if object_lock_enabled is set to true ]
+      default_retention_days: 11                         # Number of days that you want to specify for the default Object Lock retention period. [Only applicable if object_lock_enabled is set to true ]
+  logging:
+    s3_bucket_prefix: "logging-aws-landing-zone"         # s3 Bucket Prefix for all Logging Buckets Created in AWS LZ
+    standard_ia_days: 30                                 # Retention to move s3 object to Standard IA
+    glacier_days: 60                                     # Retention to move s3 object from Standard IA To Glacier
+  shared_services:
+    ses_sender_email_address: ""                         # example: test_at_ollion_com
+    ses_recipients_email_addresses:
+      - ""                                               # example: test_at_ollion_com
+      - ""                                               # example: test_at_ollion_com
+    sns_recipients_email_addresses:
+      - ""                                               # example: test_at_ollion_com
+      - ""                                               # example: test_at_ollion_com
+  billing:
+    report_name: "main-report"                           # Name of the Cost and Usage Report 
+    time_unit: "HOURLY"                                  # Frequency on which report data should be measured and displayed.
+  cloudtrail:
+    name: "main"                                         # CloudTrail Resource NAme
+    multi_region_trail: true                             # Whether to enable CLoudtrail Multi Region
+    include_global_service_events: true                  # Whether to include global service events in CloudTrail log
+  infra_cicd:
+    infra_cicd_enabled: true                             # Whether to provision INFRA CICD Account
+    git_repo_id: "ollionorg/aws-landing-zone"            # Infra CICD Github Repository ID 
+    git_repo_name: "aws-landing-zone"                    # Infra CICD Github Repository Name
+    git_branch: "infra-cicd"                             # Infra CICD Github Repository Branch
+  guardduty:
+    finding_publishing_frequency: "FIFTEEN_MINUTES"      # frequency to publish  GuardDuty finding
+  securityhub:
+    securityhub_enabled: true                            # Do you require SecurityHub to be enabled?
+    enable_aws_foundations_security: true                # Whether want to enable aws_foundations_security on security hub for all the accounts
+    enable_cis_standard_v_1_2_0: true                    # Whether want to enable cis_standard_v_1_2_0 on security hub for all the accounts
+    enable_cis_standard_v_1_4_0: true                    # Whether want to enable cis_standard_v_1_4_0 on security hub for all the accounts
+    enable_pci_dss_standard: true                        # Whether want to enable pci_dss_standard on security hub for all the accounts
+    enable_nist_standard: true                           # Whether want to enable nist_standard on security hub for all the accounts
+  permission_sets_principal:
+    cto_operations_group: ""                             # DL for CTO operations group
+    cto_core_networking_operations_group: ""             # DL for CTO core networking operations group
+    cto_security_operations_group: ""                    # DL for CTO security operations group
+    cto_elevated_security_operations_group: ""           # DL for CTO elevated security operations group
+    audit_and_compliance_operations_group: ""            # DL for CTO audit compliance operations group
+    cto_build_group: ""                                  # DL for CTO build group
+    cto_core_networking_build_group: ""                  # DL for CTO core networking build group
+    organization_admin: ""                               # DL for organization admin
+    cto_elevated_security_build_group: ""                # DL for CTO elevated security build group
+    cto_security_build_group: ""                         # DL for CTO security build group
+    cto_build_group2: ""                                 # DL for CTO build group 2
+    cfo: ""                                              # DL for CFO
+  org_hierarchy:
+    common:
+      name: "Common"                                     # Common OU name
+      scps: []                                           # List of SCPS to apply for Common OU
+      accounts:
+        audit_account:
+          name: "Audit Logs"                             # Name of the Audit Logs Account
+          email:  ""                                     # example: test_at_ollion_com
+          scps:                                          # List of SCPS to apply for Audit Logs Account
+            - "denyS3Modification"
+        billing_account:
+          name: "Billing"                                # Name of the Billing Account
+          email:  ""                                     # example: test_at_ollion_com
+          scps:                                          # List of SCPS to apply for Billing ACcount
+            - "denyS3Modification"
+        security_logs_account: 
+          name: "Security Logs"                          # Name of the Security Logs Account
+          email:  ""                                     # example: test_at_ollion_com
+          scps:                                          # List of SCPS to apply for Security Logs Account
+            - "denyS3Modification"
+        security_tools_account:    
+          name: "Security Tools"                         # Name of the Security Tools Account
+          email:  ""                                     # example: test_at_ollion_com
+          scps: []                                       # List of SCPS to apply for Security Tools Account
+        operational_logs_account:  
+          name: "Operational Logs"                       # Name of the Operational Logs Account
+          email:  ""                                     # example: test_at_ollion_com
+          scps: []                                       # List of SCPS to apply for Operationl Logs Account
+        infra_ci_cd_account:    
+          name: "Infra CI/CD"                            # Name of the INFRACICD Logs Account
+          email:  ""                                     # example: test_at_ollion_com
+          scps: []                                       # List of SCPS to apply for Infra CICD Account
+    infrastructure:                        
+      name: "Infrastructure"                             # Infrastructure OU name
+      scps: []                                           # List of SCPS to apply for Infrastructure OU
+      accounts:
+        network_hub_account:
+          name: "Network Hub"                            # Name of the INFRACICD Logs Account
+          email:  ""                                     # example: test_at_ollion_com
+          scps: []                                       # List of SCPS to apply for Network Hub Account
+        dns_hub_account:
+          name: "DNS Hub"                                # Name of the DNS HUB Account
+          email:  ""                                     # example: test_at_ollion_com
+          scps: []                                       # List of SCPS to apply for DNS Hub Account
+        high_trust_interconnect_account:
+          name: "High Trust Interconnect"                # Name of the High Trust Interconnect Account
+          email:  ""                                     # example: test_at_ollion_com
+          scps: []                                       # List of SCPS to apply for High Trust Interconnect Account
+        no_trust_interconnect_account:
+          name: "No Trust Interconnect"                  # Name of the No Trust Interconnect Account
+          email:  ""                                     # example: test_at_ollion_com
+          scps: []                                       # List of SCPS to apply for No Trust Interconnect Account
+        shared_services_account:
+          name: "Shared Services"                        # Name of the Shared Services Account
+          email:  ""                                     # example: test_at_ollion_com
+          scps: []                                       # List of SCPS to apply for Shared Services Account
+    application:
+      name: "Application"                                # Application OU name
+      scps: []                                           # List of SCPS to apply for Application OU
+      dev:
+        name: "Dev"                                      # Development OU name
+        scps: []                                         # List of SCPS to apply for Development OU
+        accounts:
+          dev_master_account:
+            name: "Dev Master"                           # Name of the Dev Master Account
+            email:  ""                                   # example: test_at_ollion_com
+            scps: []                                     # List of SCPS to apply for Dev Master Account
+          bu1_app_dev_account:
+            name: "BU1 App Dev"                          # Name of the BU1 App Dev Account
+            email:  ""                                   # example: test_at_ollion_com
+            scps: []                                     # List of SCPS to apply for BU1 App Dev Account
+      prod: 
+        name: "Prod"                                     # Production OU name
+        scps: []                                         # List of SCPS to apply for Production OU
+        accounts:
+          prod_master_account:            
+            name: "Prod Master"                          # Name of the Prod Master Account
+            email:  ""                                   # example: test_at_ollion_com
+            scps: []                                     # List of SCPS to apply for Prod Master Account
+          bu1_app_prod_account:
+            name: "BU1 App Prod"                         # Name of the BU1 App Prod Account
+            email:  ""                                   # example: test_at_ollion_com
+            scps: []                                     # List of SCPS to apply for BU1 App Prod Account
+      staging:
+        name: "Staging"                                  # Staging OU name
+        scps: []                                         # List of SCPS to apply for Staging OU
+        accounts:
+          stg_master_account:
+            name: "Staging Master"                       # Name of the Staging Master Account
+            email:  ""                                   # example: test_at_ollion_com
+            scps: []                                     # List of SCPS to apply for Staging Master Account
+          bu1_app_stg_account:
+            name: "BU1 App Staging"                      # Name of the BU1 App Staging Account
+            email:  ""                                   # example: test_at_ollion_com
+            scps: []                                     # List of SCPS to apply for BU1 App Staging Account
+network:
+  dnshub:
+    resolver:
+      domain_name: "test.com"                            # Please enter the Domain Name
+      ips:                                               # Please specify the Resolver IP address and port numbers
+        - ip: "" 
+          port: "53"
+        - ip: ""
+          port: "53"
+    securitylogging:
+      enabled: true                                      # Specify true or false to indicate whether you want to deploy security logging(route53).
+      log_name: "route53_log"                            # Provide the name for the securtiy log (route53)
+    firewall:
+      dnshub_firewall_enabled: true                      # Specify true or false to indicate whether you want to deploy dnshub firewall.
+      rule_group_name: "blocked-blacklist"               # Provide the name for the rule group (dnshub firewall)
+      domains:                                           # Mention the domain names which will be blocked
+        - "test1.com."
+        - "test2.com."
+  networkhub:
+    vpc:
+      ingress:
+        vpc_name: "ingress-vpc"                         # Name for Ingress VPC
+        vpc_cidr: ""                                    # VPC CIDR for Ingress VPC
+        public_subnets_cidr: []                         # Public Subnet CIDRs for Ingress VPC  eg:[] will create three subnets
+        tgw_attachment_subnets_cidr: []                 # Transit Gateway Subnet CIDRs for Ingress VPC  eg:[] will create three subnets per az
+      egress:
+        vpc_name: "egress-vpc"                          # Name for Egress VPC
+        vpc_cidr: ""                                    # VPC CIDR for Egress VPC
+        public_subnets_cidr: []                         # Public Subnet CIDRs for Egress VPC  eg:[] will create three subnets
+        tgw_attachment_subnets_cidr: []                 # Transit Gateway Subnet CIDRs for Egress VPC  eg:[] will create three subnets
+      inspection:
+        vpc_name: "inspection-vpc"                      # Name for Inspection VPC
+        vpc_cidr: ""                                    # VPC CIDR for inspection VPC
+        one_nat_gateway_per_az: true                    # Do you require one NAT Gateway per AZ? [Recommended to keep it true]
+        private_subnets_cidr: []                        # Private Subnet CIDRs for Inspection VPC  eg:[] will create three subnets
+        tgw_attachment_subnets_cidr: []                 # Transit Gateway Subnet CIDRs for Inspection VPC  eg:[] will create three subnets
+    transitGateway:
+      name: "tgw-shared-network-hub"                    # Name of Transit Gateway
+    firewall:
+      enabled: true                                     # Do you require Network Firewall to be enabled?
+      firewall_name: "network-hub-firewall"             # Name for Network Firewall
+      firewall_logging_config:
+        flow_retention_in_days: "60"                    # How many days is retention for traffic flow logging?
+        alert_retention_in_days: "60"                   # How many days is retention for alert logging?
+      fivetuple_stateful_rule_group:                    # Firewall rule to block communcation between env accounts
+        - sid: 1
+          source_ipaddress: "10.0.0.0/16"               # ADD CIDR of Development VPC
+          destination_ipaddress: "10.1.0.0/16"          # ADD CIDR of Production VPC
+        - sid: 2
+          source_ipaddress: "10.0.0.0/16"               # ADD CIDR of Development VPC
+          destination_ipaddress: "10.2.0.0/16"          # ADD CIDR of Staging VPC
+        - sid: 3
+          source_ipaddress: "10.1.0.0/16"               # ADD CIDR of Production VPC
+          destination_ipaddress: "10.2.0.0/16"          # ADD CIDR of Staging VPC
+env:
+  dev:
+    vpc_name: "main"                                    # Name for Development VPC
+    vpc_cidr: "10.0.0.0/16"                             # VPC CIDR for Development VPC
+    env: "dev"                                          # Environment Name
+    private_subnets_cidr: []                            # Private Subnet CIDRs for Development VPC  eg:[] will create three subnets
+    tgw_attachment_subnets_cidr: []                     # Transit Gateway Subnet CIDRs for Development VPC  eg:[] will create three subnets
+  prod:
+    vpc_name: "main"                                    # Name for Production VPC
+    vpc_cidr: "10.1.0.0/16"                             # VPC CIDR for Production VPC
+    env: "prod"                                         # Environment Name
+    private_subnets_cidr: []                            # Private Subnet CIDRs for Production VPC  eg:[] will create three subnets
+    tgw_attachment_subnets_cidr: []                     # Transit Gateway Subnet CIDRs for Production VPC  eg:[] will create three subnets
+  staging:
+    vpc_name: "main"                                    # Name for Staging VPC
+    vpc_cidr: "10.2.0.0/16"                             # VPC CIDR for Staging VPC
+    env: "staging"                                      # Environment Name
+    private_subnets_cidr: []                            # Private Subnet CIDRs for Staging VPC  eg:[] will create three subnets
+    tgw_attachment_subnets_cidr: []                     # Transit Gateway Subnet CIDRs for Staging VPC  eg:[] will create three subnets
+default_tags:
+  common:                                               # Common tags
+    environment: "Test"
+    owner: "TFProviders"
+    project: "Test"
+  account:
+    core: {}                                            # Tags for Core Account
+    cicd: {}                                            # Tags for CICD account
+    application:                 
+      dev: {}                                           # Tags for Dev Env
+      staging: {}                                       # Tags for Staging Env
+      production: {}                                    # Tags for Production Env
+  resource: {}
